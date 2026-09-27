@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "it.kituwa.stackmate"
+    namespace = "it.kituwa.porchlight"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "it.kituwa.stackmate"
+        applicationId = "it.kituwa.porchlight"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

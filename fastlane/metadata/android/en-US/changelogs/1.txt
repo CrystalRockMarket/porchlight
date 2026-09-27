@@ -1,5 +1,4 @@
-StackMate
-1.0.0 (1)
+Porchlight 1.0.0 (1)
 - First release
 - Grafana and Portainer support
 - Encrypted on-device credential storage

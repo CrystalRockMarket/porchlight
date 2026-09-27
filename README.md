@@ -1,9 +1,11 @@
-StackMate
+Porchlight
 =========
+
+*The light you leave on for the stack in the spare room.*
 
 A read-only Android client for infrastructure you already run yourself.
 
-StackMate connects to **your own** Grafana and Portainer instances and shows their
+Porchlight connects to **your own** Grafana and Portainer instances and shows their
 current state on your phone: firing alerts, container health, and which
 environments are down. No account, no analytics, no telemetry.
 
@@ -13,13 +15,13 @@ Brought to you by Kituwa IT — <https://kituwa.com>
 
 ## What it is
 
-StackMate is a **viewer, not a monitor**. Your existing servers do the watching;
+Porchlight is a **viewer, not a monitor**. Your existing servers do the watching;
 this app shows you what they report.
 
 That distinction is deliberate. An Android app cannot be a reliable always-on
 monitor: Doze mode, App Standby, background execution limits, and OEM battery
 optimisers will all stop it, and a phone that silently stops checking is worse
-than one that never checked. So StackMate does not pretend. It displays the
+than one that never checked. So Porchlight does not pretend. It displays the
 signal your infrastructure produces, and it is explicit about the freshness of
 that signal.
 
@@ -41,7 +43,7 @@ that signal.
 
 This is the part that matters most, and it drove most of the design.
 
-If a server cannot be reached, StackMate **cannot** distinguish that from "the
+If a server cannot be reached, Porchlight **cannot** distinguish that from "the
 cluster is on fire". Showing a confident green checkmark for a server that
 happened to stop responding is the most dangerous thing a monitoring client can
 do. So instead:
@@ -75,7 +77,7 @@ token lacks `alerts:read` is not a healthy Grafana, so the app says
 
 ### Portainer
 
-1. Use your ordinary Portainer username and password — StackMate exchanges them
+1. Use your ordinary Portainer username and password — Porchlight exchanges them
    for a short-lived JWT via `/api/auth`
 2. A pasted JWT also works, but it expires, so credentials are usually easier
 

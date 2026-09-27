@@ -1,1 +1,1 @@
-A read-only client for your own Grafana and Portainer servers. See service status, container health and alerts at a glance, with no account and no analytics.
+A read-only client for your own Grafana and Portainer servers. See alerts and container health at a glance, with no account and no analytics.

@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "StackMate"
+rootProject.name = "Porchlight"
 include(":app")
