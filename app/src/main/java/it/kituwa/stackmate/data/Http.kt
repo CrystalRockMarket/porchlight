@@ -58,7 +58,7 @@ class Http {
             server.authKind == AuthKind.TOKEN -> builder.header("Authorization", "Bearer $secret")
             server.authKind == AuthKind.BASIC -> builder.header(
                 "Authorization",
-                "Basic " + okhttp3.Credentials.basic(server.username.orEmpty(), secret),
+                okhttp3.Credentials.basic(server.username.orEmpty(), secret),
             )
             else -> Unit
         }

@@ -1,10 +1,10 @@
 package it.kituwa.stackmate.data
 
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 
@@ -49,7 +49,7 @@ class PortainerClient(private val http: Http) {
                 containers += Container(
                     name = container.containerName(),
                     image = container.string("Image") ?: "unknown",
-                    state = container.string("State") ?: "unknown",
+                    state = container.containerState(),
                     status = container.string("Status") ?: "",
                     health = container.healthStatus(),
                     endpoint = name,
@@ -108,9 +108,33 @@ class PortainerClient(private val http: Http) {
         return first.content.trimStart('/')
     }
 
-    private fun JsonObject.healthStatus(): String? {
-        val state = this["State"] as? JsonObject ?: return null
-        return state.string("Health")?.uppercase()
+    /**
+     * Docker's list endpoint reports "State" as a string, but some Portainer
+     * versions pass the full inspect object through, where "State" is itself an
+     * object. Accept both, and fall back to the "(healthy)" suffix Docker puts in
+     * the human-readable Status field.
+     */
+    private fun JsonObject.containerState(): String {
+        val state = this["State"] ?: return "unknown"
+        return when (state) {
+            is JsonPrimitive -> state.content
+            is JsonObject -> state.string("Status") ?: "unknown"
+            else -> "unknown"
+        }
     }
+
+    private fun JsonObject.healthStatus(): String? {
+        val state = this["State"] as? JsonObject
+        val nested = state?.string("Health")?.uppercase()
+        if (nested != null) return nested
+        return when {
+            statusContains("healthy") -> "HEALTHY"
+            statusContains("unhealthy") -> "UNHEALTHY"
+            else -> null
+        }
+    }
+
+    private fun JsonObject.statusContains(needle: String): Boolean =
+        string("Status")?.contains("($needle)", ignoreCase = true) == true
 
 }

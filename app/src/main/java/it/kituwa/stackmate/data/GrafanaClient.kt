@@ -1,6 +1,8 @@
 package it.kituwa.stackmate.data
 
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
@@ -12,6 +14,8 @@ class GrafanaClient(private val http: Http) {
     suspend fun fetch(server: Server, secret: String): ServerSnapshot {
         val now = System.currentTimeMillis()
         val base = server.baseUrl
+
+        verifyCredentials(base, server, secret)
 
         val version = runCatching { http.getJson("$base/api/health", server, secret) }
             .getOrElse { throw translate(it) }
@@ -28,8 +32,9 @@ class GrafanaClient(private val http: Http) {
         if (alertResult is JsonArray) {
             alertResult.jsonArray.filterIsInstance<JsonObject>().forEach { alert ->
                 val state = alert.string("status")?.uppercase() ?: return@forEach
-                if (state == "OK") return@forEach
+                if (state == "OK" || state == "RESOLVED") return@forEach
                 val labels = alert["labels"] as? JsonObject
+                val annotations = alert["annotations"] as? JsonObject
                 val name = labels?.string("alertname") ?: "Alert"
                 val severity = when (labels?.string("severity")?.lowercase()) {
                     "critical" -> Severity.CRITICAL
@@ -39,15 +44,19 @@ class GrafanaClient(private val http: Http) {
                 issues += Issue(
                     severity = severity,
                     title = name,
-                    detail = labels?.string("summary") ?: alert.string("message"),
-                    since = alert["startsAt"]?.jsonPrimitive?.contentOrNull?.let { parseTimestamp(it) },
+                    detail = annotations?.string("summary")
+                        ?: annotations?.string("description")
+                        ?: alert.string("message"),
+                    since = alert["startsAt"]?.let { start ->
+                        (start as? JsonPrimitive)?.content?.let { parseTimestamp(it) }
+                    },
                 )
             }
         }
 
         val details = mutableListOf(
             "Grafana" to version,
-            "Alerts" to (alertResult?.let { count(it) } ?: "unavailable"),
+            "Firing" to (alertResult?.let { count(it) } ?: "unavailable"),
         )
 
         if (alertResult == null) {
@@ -63,8 +72,24 @@ class GrafanaClient(private val http: Http) {
         )
     }
 
-    private fun count(element: kotlinx.serialization.json.JsonElement): String =
+    private fun count(element: JsonElement): String =
         (element as? JsonArray)?.size?.toString() ?: "unknown"
+
+    /**
+     * Grafana's /api/health is unauthenticated, so a bad token still returns 200 and
+     * the server would otherwise look connected. /api/user requires auth, which makes
+     * it the only reliable way to prove the credentials before trusting anything else.
+     */
+    private suspend fun verifyCredentials(base: String, server: Server, secret: String) {
+        if (server.authKind == it.kituwa.stackmate.data.AuthKind.NONE) return
+        try {
+            http.getJson("$base/api/user", server, secret)
+        } catch (error: HttpException) {
+            if (error.status == 401 || error.status == 403) {
+                throw ReachabilityException(Reachability.AUTH_FAILED, "Authentication rejected")
+            }
+        }
+    }
 
     private fun translate(error: Throwable): Throwable = when (error) {
         is HttpException -> when (error.status) {
