@@ -3,6 +3,7 @@ package it.kituwa.stackmate.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -69,7 +70,7 @@ fun OverviewScreen(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -94,22 +95,30 @@ fun OverviewScreen(
 
 @Composable
 private fun SummaryCard(state: OverviewState) {
-    val problems = state.problemCount
-    val unverified = state.servers.count { state.snapshots[it.id] == null }
-    val headline = when {
-        state.servers.isEmpty() -> "No servers yet"
-        problems > 0 -> "$problems active ${if (problems == 1) "problem" else "problems"}"
-        unverified == state.servers.size -> "Checking your servers…"
-        else -> "Everything looks healthy"
-    }
+    val summary = state.summary
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.cardColors(
+            containerColor = if (summary.alarming) {
+                MaterialTheme.colorScheme.errorContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
+        ),
     ) {
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(headline, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    summary.headline,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (summary.alarming) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
                 if (state.refreshing) {
                     CircularProgressIndicator(
                         modifier = Modifier.padding(start = 12.dp).size(18.dp),
@@ -118,10 +127,13 @@ private fun SummaryCard(state: OverviewState) {
                 }
             }
             Text(
-                "${state.servers.size} ${if (state.servers.size == 1) "server" else "servers"} configured" +
-                    if (unverified > 0) " · $unverified not yet verified" else "",
+                summary.detail,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (summary.alarming) {
+                    MaterialTheme.colorScheme.onErrorContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
         }
     }

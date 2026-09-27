@@ -1,5 +1,9 @@
 package it.kituwa.stackmate.ui
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +33,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.unit.dp
 import it.kituwa.stackmate.data.AuthKind
 import it.kituwa.stackmate.data.ServerType
@@ -41,6 +47,20 @@ fun AddServerScreen(
     onDone: () -> Unit,
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val requestNotifications = remember {
+        {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                (context as? Activity)?.requestPermissions(
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    REQUEST_NOTIFICATIONS,
+                )
+            }
+        }
+    }
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(ServerType.GRAFANA) }
@@ -194,16 +214,30 @@ fun AddServerScreen(
 
             Button(
                 onClick = {
-                    viewModel.save(null, name, type, url, authKind, username, secret) { if (it) onDone() }
+                    viewModel.save(null, name, type, url, authKind, username, secret) {
+                        if (it) {
+                            requestNotifications()
+                            onDone()
+                        }
+                    }
                 },
                 enabled = url.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Save server")
             }
+
+            Text(
+                "StackMate checks your servers in the background every 30 minutes and will " +
+                    "notify you when something needs attention.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
+
+private const val REQUEST_NOTIFICATIONS = 1001
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable

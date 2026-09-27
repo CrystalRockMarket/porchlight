@@ -92,6 +92,45 @@ export ANDROID_HOME=/path/to/Android/sdk
 No signing config is checked in. F-Droid builds and signs the app itself, which
 is the intended path for this project.
 
+## Testing
+
+60 unit tests, all runnable offline. They exist because testing found real bugs
+that reading the code did not.
+
+```bash
+./gradlew :app:testDebugUnitTest
+```
+
+Two live integration tests are skipped unless you point them at a real server:
+
+```bash
+docker run --rm -d --name gf -p 3300:3000 -e GF_SECURITY_ADMIN_USER=admin \
+  -e GF_SECURITY_ADMIN_PASSWORD=admin grafana/grafana:latest
+STACKMATE_GRAFANA_URL=http://localhost:3300 STACKMATE_GRAFANA_TOKEN=glsa_... \
+  ./gradlew :app:testDebugUnitTest
+```
+
+Bugs these caught, each of which would have shipped:
+
+- Basic auth sent a doubled `Basic Basic ...` header, breaking every Basic-auth server
+- A bad Grafana token looked like success, because `/api/health` is unauthenticated
+- Test connection sent `Bearer ` with an empty token, because the secret was read back
+  out of the store for a server that had not been saved yet — it failed for every user
+- The summary banner said "Everything looks healthy" while a server was unreachable,
+  because it counted alerts but not unreachability
+- The detail screen claimed "could not be reached" about a server that had just
+  answered and reported three firing alerts
+- "Last successful check" displayed the time of the failed attempt
+- The alert count included resolved alerts
+- Container state parsing crashed when Docker reported `State` as an object
+- The Material 3 colour scheme was incomplete, so buttons and cards rendered
+  baseline purple instead of the app's own colours
+
+The decisions those bugs lived in are now pure functions with no Android
+dependencies, so they cannot drift: `summarize()` in `Summary.kt` decides what the
+top-line banner claims, and `stalenessWarning()` in `Staleness.kt` decides when
+cached data is labelled as such.
+
 ## Tech
 
 Kotlin, Jetpack Compose with Material 3, OkHttp, kotlinx.serialization, DataStore
@@ -101,6 +140,13 @@ Keystore (no third-party crypto dependency). minSdk 24, targetSdk 35.
 No proprietary dependencies — no Google Play Services, no Firebase, no
 analytics SDK. That is a hard requirement, both technically and for F-Droid
 eligibility.
+
+## Screenshots
+
+`fastlane/metadata/android/en-US/images/phoneScreenshots/` holds six captures taken
+from the running app: the overview with a mix of healthy and failing servers, the
+Grafana alert list, the Portainer container list, the honest "showing last known
+data" screen for an unreachable server, the About screen, and the add-server form.
 
 ## License
 

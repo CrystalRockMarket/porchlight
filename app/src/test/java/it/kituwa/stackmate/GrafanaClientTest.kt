@@ -43,8 +43,9 @@ class GrafanaClientTest {
 
             assertEquals(Reachability.REACHABLE, snapshot.reachability)
             assertEquals("13.2.2", snapshot.details.first { it.first == "Grafana" }.second)
-            assertEquals("2", snapshot.details.first { it.first == "Firing" }.second)
+            assertEquals("0", snapshot.details.first { it.first == "Firing" }.second)
             assertTrue("resolved alerts must not be reported", snapshot.issues.isEmpty())
+            assertEquals("0", snapshot.details.first { it.first == "Firing" }.second)
         }
     }
 
@@ -73,6 +74,7 @@ class GrafanaClientTest {
             assertEquals("postgres unreachable", snapshot.issues[0].detail)
             assertNotNull(snapshot.issues[0].since)
             assertEquals(Severity.WARNING, snapshot.issues[1].severity)
+            assertEquals("2", snapshot.details.first { it.first == "Firing" }.second)
         }
     }
 

@@ -26,6 +26,9 @@ data class OverviewState(
 ) {
     val problemCount: Int
         get() = servers.sumOf { (snapshots[it.id]?.issues?.size ?: 0) }
+
+    val summary: Summary
+        get() = summarize(servers, snapshots)
 }
 
 class StackMateViewModel(app: Application) : AndroidViewModel(app) {
@@ -112,7 +115,7 @@ class StackMateViewModel(app: Application) : AndroidViewModel(app) {
                 username = username.trim().ifEmpty { null },
                 secret = secret,
             )
-            val message = runCatching { client.refresh(probe, persist = false) }.fold(
+            val message = runCatching { client.refresh(probe, persist = false, secretOverride = secret) }.fold(
                 onSuccess = { snapshot ->
                     when (snapshot.reachability) {
                         it.kituwa.stackmate.data.Reachability.REACHABLE ->

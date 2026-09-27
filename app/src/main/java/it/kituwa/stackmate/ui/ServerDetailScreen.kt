@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import it.kituwa.stackmate.data.Reachability
 import it.kituwa.stackmate.data.Server
 import it.kituwa.stackmate.data.ServerSnapshot
 import java.text.DateFormat
@@ -138,7 +139,6 @@ private fun SectionTitle(text: String) {
 
 @Composable
 private fun HeaderCard(server: Server, snapshot: ServerSnapshot?) {
-    val status = statusOf(snapshot)
     Card(
         Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -150,20 +150,29 @@ private fun HeaderCard(server: Server, snapshot: ServerSnapshot?) {
             snapshot?.details?.forEach { (label, value) -> MetaRow(label, value) }
 
             if (snapshot != null) {
-                Text(
-                    "Last successful check " +
-                        DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-                            .format(Date(snapshot.observedAt)),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
+                val lastSuccess = snapshot.lastSuccessAt
+                if (lastSuccess != null) {
+                    Text(
+                        "Last successful check " +
+                            DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+                                .format(Date(lastSuccess)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                } else {
+                    Text(
+                        "No successful check yet",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
             }
 
-            if (status == ServerStatus.UNREACHABLE || status == ServerStatus.CRITICAL) {
+            stalenessWarning(snapshot?.reachability ?: Reachability.UNKNOWN)?.let { notice ->
                 Text(
-                    "Showing last known data. This server could not be reached, so current " +
-                        "state is unknown — silence here does not mean everything is fine.",
+                    notice,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = 8.dp),

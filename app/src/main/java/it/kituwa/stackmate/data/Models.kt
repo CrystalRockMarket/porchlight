@@ -82,4 +82,5 @@ data class ServerSnapshot(
     val details: List<Pair<String, String>> = emptyList(),
     val observedAt: Long,
     val message: String? = null,
+    val lastSuccessAt: Long? = null,
 )

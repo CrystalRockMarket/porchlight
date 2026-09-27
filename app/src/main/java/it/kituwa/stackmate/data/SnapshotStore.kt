@@ -44,6 +44,8 @@ class SnapshotStore(context: Context) {
 
     suspend fun all(): Map<String, ServerSnapshot> = decode(store.data.first()[key])
 
+    suspend fun get(id: String): ServerSnapshot? = all()[id]
+
     private fun decode(raw: String?): Map<String, ServerSnapshot> {
         if (raw.isNullOrBlank()) return emptyMap()
         return runCatching { json.decodeFromString(MapSerializer(String.serializer(), ServerSnapshot.serializer()), raw) }

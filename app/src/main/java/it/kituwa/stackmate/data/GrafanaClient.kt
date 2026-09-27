@@ -1,7 +1,6 @@
 package it.kituwa.stackmate.data
 
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -56,7 +55,7 @@ class GrafanaClient(private val http: Http) {
 
         val details = mutableListOf(
             "Grafana" to version,
-            "Firing" to (alertResult?.let { count(it) } ?: "unavailable"),
+            "Firing" to (alertResult?.let { issues.size.toString() } ?: "unavailable"),
         )
 
         if (alertResult == null) {
@@ -71,9 +70,6 @@ class GrafanaClient(private val http: Http) {
             observedAt = now,
         )
     }
-
-    private fun count(element: JsonElement): String =
-        (element as? JsonArray)?.size?.toString() ?: "unknown"
 
     /**
      * Grafana's /api/health is unauthenticated, so a bad token still returns 200 and
