@@ -1,0 +1,6 @@
+StackMate
+1.0.0 (1)
+- First release
+- Grafana and Portainer support
+- Encrypted on-device credential storage
+- Background status notifications
