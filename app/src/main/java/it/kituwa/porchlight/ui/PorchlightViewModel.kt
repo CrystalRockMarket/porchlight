@@ -67,28 +67,28 @@ class PorchlightViewModel(app: Application) : AndroidViewModel(app) {
         authKind: AuthKind,
         username: String,
         secret: String,
-        onResult: (Boolean) -> Unit,
+        onResult: (String?) -> Unit,
     ) {
         viewModelScope.launch {
             val normalized = runCatching { HttpNormalizer.normalize(url) }.getOrNull()
             if (normalized == null) {
-                onResult(false)
+                onResult("That does not look like a valid address. Try https://your-server:3000")
                 return@launch
             }
             serverStore.upsert(
-                Server(
+                server = Server(
                     id = existingId ?: UUID.randomUUID().toString(),
                     name = name.trim().ifEmpty { normalized },
                     type = type,
                     baseUrl = normalized,
                     authKind = authKind,
                     username = username.trim().ifEmpty { null },
-                    secret = secret,
                 ),
+                plainSecret = secret,
             )
             RefreshWorker.schedule(getApplication())
             refresh()
-            onResult(true)
+            onResult(null)
         }
     }
 

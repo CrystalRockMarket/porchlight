@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -73,7 +74,7 @@ class Http {
         }
 
         client.newCall(builder.build()).execute().use { response ->
-            val payload = response.body?.string().orEmpty()
+            val payload = readBounded(response)
             if (!response.isSuccessful) throw HttpException(response.code, payload)
             if (payload.isBlank()) return json.parseToJsonElement("{}")
             return runCatching { json.parseToJsonElement(payload) }
@@ -81,7 +82,24 @@ class Http {
         }
     }
 
+    /**
+     * A self-hosted server that is misbehaving can return an arbitrarily large
+     * body. Reading it whole would risk an out-of-memory crash, and a status page
+     * on a dead host is a plausible way to trigger it.
+     */
+    private fun readBounded(response: Response): String {
+        val body = response.body ?: return ""
+        val declared = body.contentLength()
+        if (declared > MAX_BODY_BYTES) throw IOException("Response too large to read safely")
+        val source = body.source()
+        source.request(MAX_BODY_BYTES + 1)
+        val buffered = source.buffer.size
+        if (buffered > MAX_BODY_BYTES) throw IOException("Response too large to read safely")
+        return source.readUtf8(buffered)
+    }
+
     companion object {
+        const val MAX_BODY_BYTES = 8L * 1024 * 1024
         val mediaType = "application/json; charset=utf-8".toMediaType()
     }
 }

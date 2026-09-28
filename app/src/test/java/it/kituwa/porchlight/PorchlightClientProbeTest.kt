@@ -4,6 +4,7 @@ import it.kituwa.porchlight.data.AuthKind
 import it.kituwa.porchlight.data.Reachability
 import it.kituwa.porchlight.data.Server
 import it.kituwa.porchlight.data.ServerSnapshot
+import it.kituwa.porchlight.data.SecretState
 import it.kituwa.porchlight.data.ServerType
 import it.kituwa.porchlight.data.PorchlightClient
 import kotlinx.coroutines.runBlocking
@@ -25,7 +26,7 @@ class PorchlightClientProbeTest {
 
     private val saved = mutableListOf<ServerSnapshot>()
 
-    private fun client(storeLookup: (String) -> String? = { null }) = PorchlightClient(
+    private fun client(storeLookup: (String) -> SecretState = { SecretState.Absent }) = PorchlightClient(
         readSecret = { id -> storeLookup(id) },
         writeSnapshot = { snapshot -> saved += snapshot },
         readServers = { emptyList() },
@@ -94,7 +95,7 @@ class PorchlightClientProbeTest {
             }
         }.use { stub ->
             val savedServer = probeServer(stub.baseUrl).copy(secret = "encrypted-blob")
-            client { "decrypted-from-keystore" }.refresh(savedServer, persist = true)
+            client { SecretState.Value("decrypted-from-keystore") }.refresh(savedServer, persist = true)
 
             assertTrue(authHeaders.all { it == "Bearer decrypted-from-keystore" })
             assertEquals(1, saved.size)
@@ -150,7 +151,7 @@ class LastSuccessTimestampTest {
     private val bad = ServerSnapshot("a", Reachability.UNREACHABLE, observedAt = 2_000L)
 
     private fun client(stored: ServerSnapshot?) = PorchlightClient(
-        readSecret = { null },
+        readSecret = { SecretState.Absent },
         writeSnapshot = {},
         readServers = { emptyList() },
         readSnapshot = { stored },

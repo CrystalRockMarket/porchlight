@@ -43,6 +43,17 @@ data class Server(
     val enabled: Boolean = true,
 )
 
+/**
+ * The outcome of looking up a stored credential. ABSENT and UNDECRYPTABLE are
+ * different problems with different fixes, and conflating them sends the user
+ * looking in the wrong place.
+ */
+sealed interface SecretState {
+    data object Absent : SecretState
+    data object Undecryptable : SecretState
+    data class Value(val secret: String) : SecretState
+}
+
 @Serializable
 enum class Reachability { UNKNOWN, REACHABLE, UNREACHABLE, AUTH_FAILED }
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Porchlight is a client for infrastructure the user runs on their own network,
+  where plain HTTP is the normal case. Cleartext is therefore permitted, but
+  stated here rather than via usesCleartextTraffic so the decision is visible
+  and reviewable, and so it can be tightened later without touching the manifest.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

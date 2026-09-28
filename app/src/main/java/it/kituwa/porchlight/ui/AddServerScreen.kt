@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Card
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -69,6 +71,7 @@ fun AddServerScreen(
     var secret by remember { mutableStateOf("") }
     var testResult by remember { mutableStateOf<String?>(null) }
     var testing by remember { mutableStateOf(false) }
+    var saveError by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -214,10 +217,12 @@ fun AddServerScreen(
 
             Button(
                 onClick = {
-                    viewModel.save(null, name, type, url, authKind, username, secret) {
-                        if (it) {
+                    viewModel.save(null, name, type, url, authKind, username, secret) { error ->
+                        if (error == null) {
                             requestNotifications()
                             onDone()
+                        } else {
+                            saveError = error
                         }
                     }
                 },
@@ -225,6 +230,22 @@ fun AddServerScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Save server")
+            }
+
+            saveError?.let { error ->
+                Card(
+                    Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                    ),
+                ) {
+                    Text(
+                        error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(14.dp),
+                    )
+                }
             }
 
             Text(

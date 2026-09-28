@@ -13,7 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -22,9 +24,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,6 +52,35 @@ fun ServerDetailScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val server = state.servers.firstOrNull { it.id == serverId }
     val snapshot = state.snapshots[serverId]
+    var confirmingDelete by remember { mutableStateOf(false) }
+
+    if (confirmingDelete && server != null) {
+        AlertDialog(
+            onDismissRequest = { confirmingDelete = false },
+            title = { Text("Remove ${server.name}?") },
+            text = {
+                Text(
+                    "This deletes the server and its stored credentials from this device. " +
+                        "Nothing on the server itself is changed, but you will need to re-enter " +
+                        "the token or password to add it again."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmingDelete = false
+                        viewModel.delete(server)
+                        onRemoved()
+                    },
+                ) {
+                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingDelete = false }) { Text("Cancel") }
+            },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -60,12 +95,7 @@ fun ServerDetailScreen(
                     IconButton(onClick = { viewModel.refresh() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
-                    IconButton(
-                        onClick = {
-                            server?.let { viewModel.delete(it) }
-                            onRemoved()
-                        },
-                    ) {
+                    IconButton(onClick = { confirmingDelete = true }) {
                         Icon(Icons.Outlined.Delete, contentDescription = "Remove server")
                     }
                 },

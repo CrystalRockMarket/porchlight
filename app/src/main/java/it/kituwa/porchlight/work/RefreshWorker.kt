@@ -1,7 +1,9 @@
 package it.kituwa.porchlight.work
 
 import android.content.Context
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.NetworkType
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -42,7 +44,14 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
 
         fun schedule(context: Context) {
             Notifications.ensureChannel(context)
+            // Without this, a phone in airplane mode runs the check, fails to reach
+            // every server, and notifies the user that their infrastructure is down.
             val request = PeriodicWorkRequestBuilder<RefreshWorker>(30, TimeUnit.MINUTES)
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                        .build()
+                )
                 .build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 UNIQUE_NAME,

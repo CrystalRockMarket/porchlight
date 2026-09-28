@@ -42,6 +42,8 @@ object Crypto {
         return Base64.encodeToString(payload, Base64.NO_WRAP)
     }
 
+    fun decryptOrNull(payload: String): String? = runCatching { decrypt(payload) }.getOrNull()
+
     fun decrypt(payload: String): String {
         val bytes = Base64.decode(payload, Base64.NO_WRAP)
         val iv = bytes.copyOfRange(0, IV_LENGTH)

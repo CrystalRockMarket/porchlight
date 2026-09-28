@@ -25,6 +25,7 @@ class PortainerClient(private val http: Http) {
 
         val containers = mutableListOf<Container>()
         val stopped = mutableListOf<String>()
+        val unreadable = mutableListOf<String>()
 
         endpoints.forEach { endpoint ->
             val id = endpoint.longOrNullCompat("Id") ?: return@forEach
@@ -43,7 +44,15 @@ class PortainerClient(private val http: Http) {
                     secret,
                     token,
                 )
-            }.getOrNull()?.asArray() ?: return@forEach
+            }.getOrNull()?.asArray()
+
+            if (list == null) {
+                // A dead Docker socket looks exactly like an environment with no
+                // containers. Reporting "0 containers, all healthy" here would be
+                // the single most misleading thing this app could do.
+                unreadable += name
+                return@forEach
+            }
 
             list.filterIsInstance<JsonObject>().forEach { container ->
                 containers += Container(
@@ -61,6 +70,13 @@ class PortainerClient(private val http: Http) {
         stopped.forEach { name ->
             issues += Issue(Severity.CRITICAL, "Environment offline", detail = name)
         }
+        unreadable.forEach { name ->
+            issues += Issue(
+                severity = Severity.CRITICAL,
+                title = "Could not read containers",
+                detail = "$name did not return a container list, so its state is unknown.",
+            )
+        }
         containers.filter { !it.isHealthy }.forEach { container ->
             issues += Issue(
                 severity = if (container.state.equals("exited", true)) Severity.WARNING else Severity.CRITICAL,
@@ -73,7 +89,10 @@ class PortainerClient(private val http: Http) {
         val running = containers.count { it.state.equals("running", true) }
         val details = listOf(
             "Environments" to "${endpoints.size - stopped.size}/${endpoints.size} online",
-            "Containers" to "$running/${containers.size} running",
+            "Containers" to when {
+                unreadable.isNotEmpty() -> "unknown, $running read"
+                else -> "$running/${containers.size} running"
+            },
         )
 
         return ServerSnapshot(
