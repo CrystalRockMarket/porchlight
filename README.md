@@ -165,6 +165,13 @@ No proprietary dependencies — no Google Play Services, no Firebase, no
 analytics SDK. That is a hard requirement, both technically and for F-Droid
 eligibility.
 
+## Notes for maintainers and reviewers
+
+[NOTES.md](NOTES.md) covers the architecture, the reasoning behind the honesty
+rules, the security posture, exactly what was verified against real servers and
+what was not, and the known rough edges. Read it before changing the summary
+logic in `ui/Summary.kt` or `ui/Staleness.kt`.
+
 ## Screenshots
 
 `fastlane/metadata/android/en-US/images/phoneScreenshots/` holds six captures taken
