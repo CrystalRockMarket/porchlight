@@ -1,14 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Porchlight is a client for infrastructure the user runs on their own network,
-  where plain HTTP is the normal case. Cleartext is therefore permitted, but
-  stated here rather than via usesCleartextTraffic so the decision is visible
-  and reviewable, and so it can be tightened later without touching the manifest.
+  Porchlight talks to infrastructure the user runs on their own network, where two
+  things are normal that the public web is not:
+
+  1. Plain HTTP. Home-lab services are commonly reached over http:// on a LAN or
+     VPN, with no certificate at all.
+
+  2. A private or self-signed certificate. Reverse proxies, and Portainer's own
+     HTTPS listener, present a certificate signed by nobody the system trusts.
+
+  For (1), cleartext is permitted and stated here rather than in the manifest so
+  the decision is explicit and reviewable, and can be tightened later without
+  touching the manifest.
+
+  For (2), the app opts in to user-installed certificate authorities. This is the
+  approach Android documents for talking to private infrastructure: the user
+  installs their CA once, in Settings or by importing the .crt that their reverse
+  proxy or Portainer offers, and from then on the certificate validates normally.
+
+  Deliberately NOT done: a trust-all or "skip verification" option. Accepting an
+  unverified certificate disables the protection TLS provides against an active
+  network attacker, and a per-server switch for it would be the sort of thing that
+  turns into a security complaint later. Trusting user-installed CAs gives the same
+  convenience while keeping full certificate validation, because the user has
+  positively identified the authority by installing it themselves.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />
+            <certificates src="user" />
         </trust-anchors>
     </base-config>
 </network-security-config>

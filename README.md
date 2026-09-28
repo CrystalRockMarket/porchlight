@@ -133,6 +133,28 @@ dependencies, so they cannot drift: `summarize()` in `Summary.kt` decides what t
 top-line banner claims, and `stalenessWarning()` in `Staleness.kt` decides when
 cached data is labelled as such.
 
+## Private and self-signed certificates
+
+The normal case for self-hosted infrastructure is a certificate nobody on the
+public web trusts: a reverse proxy with a private CA, or Portainer's own
+self-signed certificate.
+
+Porchlight handles this the way Android documents for talking to private
+infrastructure: the app opts in to user-installed certificate authorities via
+[`network_security_config.xml`](app/src/main/res/xml/network_security_config.xml).
+The user installs their CA once, and the certificate then validates normally.
+
+Deliberately **not** implemented: a per-server "accept this certificate" or
+"ignore certificate errors" switch. Those disable certificate validation, which
+is the protection TLS gives against an active attacker on the same network, and
+they are the sort of feature that becomes a security complaint later. Trusting
+user-installed CAs gives the same convenience with validation intact, because
+the user has positively identified the authority by installing it.
+
+Plain HTTP is also permitted, for services reached over a LAN or VPN. That
+decision is declared in the same file rather than via `usesCleartextTraffic`, so
+it is visible to a reviewer and can be tightened without touching the manifest.
+
 ## Tech
 
 Kotlin, Jetpack Compose with Material 3, OkHttp, kotlinx.serialization, DataStore

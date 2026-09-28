@@ -118,8 +118,10 @@ class PorchlightClientProbeTest {
     }
 
     @Test
-    fun tlsFailuresSuggestFallingBackToHttp() {
-        assertTrue(describe(SSLException("cert not trusted")).contains("http://"))
+    fun tlsFailuresPointAtTheRealFix() {
+        val message = describe(SSLException("cert not trusted"))
+        assertTrue("must mention installing the CA", message.contains("install that CA"))
+        assertTrue("must still offer the http fallback", message.contains("http://"))
     }
 
     @Test

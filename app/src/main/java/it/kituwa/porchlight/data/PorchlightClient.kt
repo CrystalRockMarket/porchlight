@@ -98,8 +98,9 @@ class PorchlightClient(
         is UnknownHostException ->
             "That hostname could not be resolved. Check the address, or use the server's IP."
         is SSLException ->
-            "The TLS certificate could not be verified. Try http:// instead if the server sits " +
-                "behind a reverse proxy with a self-signed certificate."
+            "The server's certificate is not trusted. If it is signed by a private or " +
+                "self-signed certificate, install that CA in Android Settings, or use http:// " +
+                "for a server on your own network."
         is ConnectException, is NoRouteToHostException, is PortUnreachableException ->
             "Could not open a connection. Check the port number and that the server is reachable " +
                 "from this device."
